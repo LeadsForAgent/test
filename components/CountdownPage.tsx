@@ -8,25 +8,16 @@ interface CountdownPageProps {
 }
 
 const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
-  // Set the target time to 4 days, 1 hour and 35 minutes from now
-  const targetDate = useMemo(() => {
-    // We use a specific key for this duration to ensure it updates for the user if they've seen a previous version
-    const key = 'valentine_target_date_v3_4d_1h_35m';
-    const saved = localStorage.getItem(key);
-    if (saved) return parseInt(saved, 10);
-    
-    const now = Date.now();
-    const fourDays = 4 * 24 * 60 * 60 * 1000;
-    const oneHour = 1 * 60 * 60 * 1000;
-    const thirtyFiveMinutes = 35 * 60 * 1000;
-    const target = now + fourDays + oneHour + thirtyFiveMinutes;
-    
-    localStorage.setItem(key, target.toString());
-    return target;
+  // Target: Friday, February 6, 2026, at 9:30 PM Eastern Time (EST is UTC-5)
+  // ISO string with offset: 2026-02-06T21:30:00-05:00
+  const TARGET_DATE_STRING = "2026-02-06T21:30:00-05:00";
+  
+  const targetTimestamp = useMemo(() => {
+    return new Date(TARGET_DATE_STRING).getTime();
   }, []);
 
   const calculateTimeLeft = () => {
-    const difference = targetDate - Date.now();
+    const difference = targetTimestamp - Date.now();
     let timeLeft = {
       days: 0,
       hours: 0,
@@ -49,6 +40,12 @@ const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
   const [time, setTime] = useState(calculateTimeLeft());
 
   useEffect(() => {
+    // Immediate check on mount: if time is already up, move to the next page.
+    if (time.difference <= 0) {
+      onFinish();
+      return;
+    }
+
     const timer = setInterval(() => {
       const updatedTime = calculateTimeLeft();
       setTime(updatedTime);
@@ -60,7 +57,7 @@ const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [targetDate, onFinish]);
+  }, [targetTimestamp, onFinish, time.difference]);
 
   const { timeLeft } = time;
 
@@ -70,11 +67,11 @@ const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
         key={value}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="text-4xl md:text-6xl font-bold text-rose-600 bg-white/40 backdrop-blur-sm rounded-2xl p-4 min-w-[80px] md:min-w-[120px] shadow-lg border border-white/50"
+        className="text-4xl md:text-6xl font-bold text-rose-600 bg-white/40 backdrop-blur-sm rounded-2xl p-4 min-w-[80px] md:min-w-[120px] shadow-lg border border-white/50 select-none"
       >
         {value.toString().padStart(2, '0')}
       </motion.div>
-      <span className="text-sm md:text-base text-rose-500 font-semibold mt-2 uppercase tracking-widest">{label}</span>
+      <span className="text-sm md:text-base text-rose-500 font-semibold mt-2 uppercase tracking-widest select-none">{label}</span>
     </div>
   );
 
@@ -88,13 +85,17 @@ const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
         transition={{ duration: 1 }}
         className="z-10 text-center"
       >
-        <h1 className="text-5xl md:text-7xl font-romantic text-rose-600 mb-2 drop-shadow-sm">
+        <motion.h1 
+          className="text-5xl md:text-7xl font-romantic text-rose-600 mb-2 drop-shadow-sm select-none"
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+        >
           Hello my love
-        </h1>
-        <h2 className="text-2xl md:text-3xl font-romantic text-rose-500 mb-6 opacity-80">
+        </motion.h1>
+        <h2 className="text-2xl md:text-3xl font-romantic text-rose-500 mb-6 opacity-80 select-none">
           Something special is coming...
         </h2>
-        <p className="text-rose-400 font-semibold mb-12 italic">Patiently waiting for the magic to begin</p>
+        <p className="text-rose-400 font-semibold mb-12 italic select-none">The heart keeps count until we meet</p>
 
         <div className="flex flex-wrap justify-center items-center gap-y-8">
           <TimeUnit value={timeLeft.days} label="Days" />
@@ -107,7 +108,7 @@ const CountdownPage: React.FC<CountdownPageProps> = ({ onFinish }) => {
       <motion.div 
         animate={{ opacity: [0.4, 1, 0.4] }}
         transition={{ duration: 3, repeat: Infinity }}
-        className="absolute bottom-12 text-rose-400 font-romantic text-2xl"
+        className="absolute bottom-12 text-rose-400 font-romantic text-2xl select-none"
       >
         counting down the heartbeats...
       </motion.div>
