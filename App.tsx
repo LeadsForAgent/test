@@ -1,24 +1,31 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ValentinePage from './components/ValentinePage';
 import RosePage from './components/RosePage';
 import CountdownPage from './components/CountdownPage';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'countdown' | 'valentine' | 'rose'>('countdown');
+  // Target date for logic consistency
+  const TARGET_DATE = new Date("2026-02-06T21:30:00-05:00").getTime();
 
-  // Load state from local storage to persist timer completion and acceptance
-  useEffect(() => {
-    const timerFinished = localStorage.getItem('valentine_timer_finished') === 'true';
+  const [view, setView] = useState<'countdown' | 'valentine' | 'rose'>(() => {
     const accepted = localStorage.getItem('valentine_accepted') === 'true';
+    if (accepted) return 'rose';
 
-    if (accepted) {
-      setView('rose');
-    } else if (timerFinished) {
-      setView('valentine');
+    const now = Date.now();
+    const isPastTarget = now >= TARGET_DATE;
+    const timerFinishedFlag = localStorage.getItem('valentine_timer_finished') === 'true';
+
+    // If it's already past the specific date, we can show the valentine page.
+    // Otherwise, we must show the countdown.
+    if (isPastTarget || timerFinishedFlag) {
+      // Re-verify it's actually past the date in case the flag was from an old session
+      if (isPastTarget) return 'valentine';
     }
-  }, []);
+    
+    return 'countdown';
+  });
 
   const handleTimerFinish = useCallback(() => {
     localStorage.setItem('valentine_timer_finished', 'true');
